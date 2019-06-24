@@ -3,7 +3,7 @@ from abc import ABC
 from pathlib import PosixPath, WindowsPath
 from typing import TypeVar
 
-from fario.util import make_parent_dirs
+from farao.util import make_parent_dirs
 
 
 ...

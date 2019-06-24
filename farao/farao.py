@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any, Callable, Mapping, Sequence, TypeVar, Union
 
-from fario import File
+from farao import File
 
 
 T = TypeVar("T")
