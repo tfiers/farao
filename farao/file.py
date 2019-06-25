@@ -1,5 +1,4 @@
 import os
-from abc import ABC
 from pathlib import PosixPath, WindowsPath
 from typing import TypeVar
 
@@ -17,7 +16,7 @@ else:
 T = TypeVar("T")
 
 
-class File(PathlibPath, ABC):
+class File(PathlibPath):
     """
     Describes a file that is input/output to a task.
     """
