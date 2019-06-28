@@ -31,17 +31,18 @@ Minimal workflow example:
 ```py
 from my_tasks import downsample, calc_envelope, plot_matrix
 from my_config import raw_data
-from farao import schedule, run_all
+from farao import schedule
 
-envelope_files = []
+envelopes = []
 for recording_file in raw_data:
-    downsampled_signal_file = schedule(downsample, [recording_file])
-    envelope_file = schedule(calc_envelope, [downsampled_signal_file])
-    envelope_files.append(envelope_file)
+    downsampled_signal = schedule(downsample, [recording_file])
+    envelope_file = schedule(calc_envelope, [downsampled_signal])
+    envelopes.append(envelope_file)
 
-schedule(plot_matrix, envelope_files)
-run_all()
+schedule(plot_matrix, envelopes)
+schedule.run_sequentially()
 ```
+Note that `schedule(..).output` returns immediately
 
 <!-- To install airflow on Windows:
 conda install setproctitle -c conda-forge

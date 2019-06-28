@@ -1,8 +1,6 @@
 import os
-from pathlib import PosixPath, WindowsPath
-from typing import TypeVar
-
-from farao.util import make_parent_dirs
+from pathlib import PosixPath, WindowsPath, Path
+from typing import TypeVar, Union
 
 
 ...
@@ -41,6 +39,10 @@ class File(PathlibPath):
         make_parent_dirs(path)
         return PathlibPath.__new__(cls, path)
 
+    def delete(self):
+        if self.exists():
+            self.unlink()
+
     @property
     def path_string(self):
         """ Path where this object is stored on disk, as a string. """
@@ -60,3 +62,13 @@ class File(PathlibPath):
             else:
                 break
         return f"{size:.1f} {unit}"
+
+
+def make_parent_dirs(file_path: Union[Path, str]):
+    """
+    Make sure the containing directories exist.
+
+    :param file_path:  Pointing to a file in a directory.
+    """
+    dir_path: Path = Path(file_path).parent
+    dir_path.mkdir(exist_ok=True, parents=True)
