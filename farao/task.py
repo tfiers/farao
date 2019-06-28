@@ -47,7 +47,7 @@ class Task:
     output_name: Optional[str] = None
 
     def run(self):
-        """ Atomically execute function, if it hasn't completed yet. """
+        """ Atomically execute function, if it hasn't completed yet before. """
         if self.output.exists():
             print(f"Skipping {self}, as its output already exists.")
         else:
@@ -55,11 +55,14 @@ class Task:
             try:
                 self.f(**self._f_kwargs)
                 print(f"{self} completed succesfully")
-            except Exception as err:
+            except BaseException as err:
                 print(f"{self} failed (exception follows).")
                 if self.output.exists():
-                    # Delete possibly incomplete or corrupt output.
                     self.output.delete()
+                    print(
+                        f"Deleted possibly incomplete or corrupt output"
+                        f" at {self.output}"
+                    )
                 raise err
 
     def __repr__(self):

@@ -1,4 +1,4 @@
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from datetime import datetime
 from enum import Enum
 from glob import glob
@@ -24,6 +24,49 @@ class Config:
 
     run_info_log_level: RunInfoLogLevel = RunInfoLogLevel.SHORT
 
+    @classmethod
+    def load_from_directory(cls, directory=None, use_default=True) -> "Config":
+        """
+        Search the given directory (default: current working directory) for a
+        file named "config.py" and import an object named "config" from it.
+        If such a file is not found and "use_default" is True, instantiate
+        an instance with default options.
+        """
+        if directory is None:
+            directory = getcwd()
+        path.insert(0, str(directory))
+
+        try:
+            # Instruction for PyCharm code editor:
+            # noinspection PyUnresolvedReferences
+            from config import config
+        except ModuleNotFoundError as err:
+            msg = f'Did not find a "config.py" file in {directory}'
+            if use_default:
+                print(f"{msg}. Generating default {cls}.")
+                config = cls()
+            else:
+                raise cls.ConfigError(msg) from err
+        except ImportError as err:
+            raise cls.ConfigError(
+                'Your "config.py" file must define an object named "config"'
+            ) from err
+        except TypeError as err:
+            raise cls.ConfigError(
+                'Your custom "config" object could not be loaded.'
+                " One of the specified arguments may have a wrong name."
+                " See preceding exception for details."
+            ) from err
+
+        if not isinstance(config, Config):
+            raise cls.ConfigError(
+                f'Your custom "config" object must be an instance of {Config} or'
+                f" of a subclass of it, not {type(config)}."
+            )
+
+        config: cls
+        return config
+
     def __post_init__(self):
         if self.run_info_log_level is not self.RunInfoLogLevel.OFF:
             self.log_run_info()
@@ -45,34 +88,35 @@ class Config:
             print(
                 f"{cfg_class} is part of package"
                 f' "{top_level_package_name}", located at {top_level_directory}.'
-                f" Last modified source file in this directory tree is:"
+                f" Source files in this directory last modified at:"
             )
         else:
-            print("Last modified source file: ", end="")
+            print("Source last modified at ", end="")
         datetime_fmt = "%Y-%m-%d %H:%M:%S"
         print(
-            f"{Path(last_modified_file).relative_to(top_level_directory)},"
-            f" at {datetime.fromtimestamp(last_modified):{datetime_fmt}}",
-            end=" ",
+            f"{datetime.fromtimestamp(last_modified):{datetime_fmt}}"
+            f" ({Path(last_modified_file).relative_to(top_level_directory)})"
         )
         try:
             repo = git.Repo(top_level_directory, search_parent_directories=True)
             sha = repo.head.object.hexsha[:7]
             commit = repo.head.commit
+            commit_time = f"{commit.committed_datetime:{datetime_fmt}}"
             if self.run_info_log_level is self.RunInfoLogLevel.FULL:
                 print(
-                    f'\nPackage "{top_level_package_name}" is part of git repo at'
-                    f" {repo.working_dir}, with latest commit at"
-                    f" {commit.committed_datetime:{datetime_fmt}}"
+                    f'Package "{top_level_package_name}" is part of git repo at'
+                    f" {repo.working_dir}, with latest commit at {commit_time}"
                     f' ("{commit.message.strip()}", {sha})'
                 )
             else:
-                print(f"({sha})")
+                print(f"Last git commit at {commit_time} ({sha})")
         except Exception as err:
-            print(
-                f"(Could not find git repo that {top_level_directory} is "
-                f"part of. Reason: {err})"
-            )
+            if self.run_info_log_level is self.RunInfoLogLevel.FULL:
+                print(
+                    f"Could not find git repo that {top_level_directory} is "
+                    f"part of. Reason: {err}"
+                )
+        print(f"Current time: {datetime.now():{datetime_fmt}}")
 
     def normalize(self):
         """To be extended by subclasses."""
@@ -92,44 +136,6 @@ class Config:
                         f'Got type: "{type(value)}".'
                         f"See preceding exception for details."
                     ) from e
-
-    @classmethod
-    def load_from_directory(cls, directory=None) -> "Config":
-        """
-        Search the given directory (default: current working directory) for a
-        file named "config.py" and import an object named "config" from it.
-        """
-        if directory is None:
-            directory = getcwd()
-        path.insert(0, str(directory))
-
-        try:
-            # Instruction for PyCharm code editor:
-            # noinspection PyUnresolvedReferences
-            from config import config
-        except ModuleNotFoundError as err:
-            raise cls.ConfigError(
-                f'Did not find a "config.py" file in {directory}'
-            ) from err
-        except ImportError as err:
-            raise cls.ConfigError(
-                'Your "config.py" file must define an object named "config"'
-            ) from err
-        except TypeError as err:
-            raise cls.ConfigError(
-                'Your custom "config" object could not be loaded.'
-                " One of the specified arguments may have a wrong name."
-                " See preceding exception for details."
-            ) from err
-
-        if not isinstance(config, Config):
-            raise cls.ConfigError(
-                f'Your custom "config" object must be an instance of {Config} or'
-                f" of a subclass of it, not {type(config)}."
-            )
-
-        config: cls
-        return config
 
     @staticmethod
     def resolve_path(path: str) -> Path:
