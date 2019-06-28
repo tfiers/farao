@@ -37,6 +37,9 @@ class File(PathlibPath):
 
     def __new__(cls, path):
         make_parent_dirs(path)
+        ext = cls.extension
+        if str(path)[len(ext):] != ext:
+            path = str(path) + ext
         return PathlibPath.__new__(cls, path)
 
     def delete(self):

@@ -22,11 +22,11 @@ class Scheduler:
         self,
         f: Callable,
         input: OneOrMore[File],
+        output: OneOrMore[File],
         params: Mapping[str, Any] = None,
-        output_name: Optional[str] = None,
     ) -> File:
-        new_task = Task(f, input, params, self.config, output_name)
-        output_key = str(new_task.output)
+        new_task = Task(f, input, output, params, self.config)
+        output_key = str(output)
         if output_key in self.outputs:
             conflicting_task = self.outputs[output_key]
             print(
@@ -36,7 +36,7 @@ class Scheduler:
         else:
             self.tasks.append(new_task)
             self.outputs[output_key] = new_task
-            return new_task.output
+            return output
 
     def run_sequentially(self):
         for task in self.tasks:
