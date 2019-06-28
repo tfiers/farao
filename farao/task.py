@@ -8,6 +8,7 @@ T = TypeVar("T")
 OneOrMore = Union[T, Tuple[T, ...]]
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Mapping, Type
 
 from farao.config import Config
@@ -24,7 +25,7 @@ class ArgSpec:
 
 f_argspec = (
     ArgSpec("input", OneOrMore[File]),
-    ArgSpec("output", OneOrMore[File]),
+    ArgSpec("output", File),
     ArgSpec("params", Mapping[str, Any], optional=True),
     ArgSpec("config", Config, optional=True),
 )
@@ -34,7 +35,6 @@ f_argspec = (
 class Task:
     f: Callable
     input: OneOrMore[File]
-    output: OneOrMore[File]
     params: Mapping[str, Any]
     config: Config
     output_name: Optional[str] = None
@@ -63,6 +63,33 @@ class Task:
     def __str__(self):
         """ A short, friendly representation. """
         return f"Task({self.output.relative_to(getcwd())})"
+
+    @property
+    def output(self) -> File:
+        return self._OutputType(self._output_path)
+
+    @property
+    def _OutputType(self) -> Type[File]:
+        return get_type_hints(self.f)["output"]
+
+    @property
+    def _output_path(self) -> Path:
+        if self.output_name:
+            filename = self.output_name
+        else:
+            filename = self._filename_from_inputs
+        directory = self.config.output_root / self.f.__name__
+        path = directory / (filename + self._OutputType.extension)
+        return path
+
+    @property
+    def _filename_from_inputs(self):
+        input_name_stems = []
+        for file in as_tuple(self.input):
+            input_name_stem = file.name.split(".", 1)[0]
+            if input_name_stem not in input_name_stems:
+                input_name_stems.append(input_name_stem)
+        filename = "__".join(input_name_stems)
 
     def __post_init__(self):
         self._validate()
