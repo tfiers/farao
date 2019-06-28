@@ -1,17 +1,24 @@
+from dataclasses import dataclass
 from os import getcwd
-from typing import Callable, Optional, Tuple, TypeVar, Union, get_type_hints
+from pathlib import Path
+from typing import (
+    Any,
+    Callable,
+    Mapping,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    get_type_hints,
+)
 
+from farao.config import Config
 from farao.file import File
 
 
 T = TypeVar("T")
 OneOrMore = Union[T, Tuple[T, ...]]
-
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Any, Mapping, Type
-
-from farao.config import Config
 
 
 @dataclass
@@ -90,6 +97,7 @@ class Task:
             if input_name_stem not in input_name_stems:
                 input_name_stems.append(input_name_stem)
         filename = "__".join(input_name_stems)
+        return filename
 
     def __post_init__(self):
         self._validate()

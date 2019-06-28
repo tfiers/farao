@@ -7,5 +7,5 @@ setup(
     author_email="tomas.fiers@gmail.com",
     url="https://github.com/tfiers/farao",
     packages=find_packages(),
-    install_requires=("typeguard",),
+    install_requires=("typeguard", "gitpython"),
 )

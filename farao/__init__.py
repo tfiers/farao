@@ -1,7 +1,4 @@
-from farao.config import Config, load_config
+from farao.config import Config
 from farao.file import File
 from farao.schedule import Scheduler
-
-
-# A default scheduler:
-schedule = Scheduler(Config(output_root="."))
+from farao.util import partial
