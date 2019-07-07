@@ -25,7 +25,7 @@ class Config:
     run_info_log_level: RunInfoLogLevel = RunInfoLogLevel.SHORT
 
     @classmethod
-    def load_from_directory(cls, directory=None, use_default=True) -> "Config":
+    def load(cls, directory=None, use_default=True) -> "Config":
         """
         Search the given directory (default: current working directory) for a
         file named "config.py" and import an object named "config" from it.
