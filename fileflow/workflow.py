@@ -80,7 +80,7 @@ class Workflow:
         self._tasks: List[Task] = []
 
     @decopatch.function_decorator
-    def task(self, output: Optional[Type[File]] = None, saved: bool = True):
+    def task(self, saved: bool = True):
         """
         The returned decorator makes any normal Python function into a task. It
         can be used both as "@my_workflow.task" and
@@ -93,14 +93,11 @@ class Workflow:
             return_type = get_type_hints(function).get("return")
             if return_type and issubclass(return_type, Saveable):
                 output_filetype = return_type
-            elif output:
-                output_filetype = output
             else:
                 msg = linearize(
                     f"""Cannot determine how to save output of {function}.
-                    Either specify the "output" option of the "task" decorator,
-                    or annotate the function with a return type that is a
-                    subclass of "fileflow.Saveable"."""
+                    Annotate the function with a return type that is a subclass
+                    of "fileflow.Saveable"."""
                 )
                 raise UserWarning(msg)
 
