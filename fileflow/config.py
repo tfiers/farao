@@ -15,7 +15,7 @@ from typeguard import check_type
 
 @dataclass
 class Config:
-    output_root: Path
+    output_root: Path = "output/"
 
     class RunInfoLogLevel(Enum):
         OFF = 0
@@ -77,9 +77,14 @@ class Config:
         cfg_class = self.__class__
         print(f"Loaded {cfg_class.__name__}:")
         pprint(asdict(self))
+        DATETIME_FMT = "%Y-%m-%d %H:%M:%S"
+        print(f"Current time: {datetime.now():{DATETIME_FMT}}")
         top_level_package_name = cfg_class.__module__.split(".")[0]
         top_level_package = import_module(top_level_package_name)
-        top_level_directory = top_level_package.__path__._path[0]
+        try:
+            top_level_directory = top_level_package.__path__._path[0]
+        except AttributeError:
+            top_level_directory = top_level_package.__path__[0]
         source_files = glob(f"{top_level_directory}/**/*.py", recursive=True)
         mtimes = [getmtime(file) for file in source_files]
         last_modified = max(mtimes)
@@ -91,17 +96,19 @@ class Config:
                 f" Source files in this directory last modified at:"
             )
         else:
-            print("Source last modified at ", end="")
-        datetime_fmt = "%Y-%m-%d %H:%M:%S"
+            msg = (
+                f'"{top_level_package_name}" source code:\n  Last modified at '
+            )
+            print(msg, end="")
         print(
-            f"{datetime.fromtimestamp(last_modified):{datetime_fmt}}"
+            f"{datetime.fromtimestamp(last_modified):{DATETIME_FMT}}"
             f" ({Path(last_modified_file).relative_to(top_level_directory)})"
         )
         try:
             repo = git.Repo(top_level_directory, search_parent_directories=True)
             sha = repo.head.object.hexsha[:7]
             commit = repo.head.commit
-            commit_time = f"{commit.committed_datetime:{datetime_fmt}}"
+            commit_time = f"{commit.committed_datetime:{DATETIME_FMT}}"
             if self.run_info_log_level is self.RunInfoLogLevel.FULL:
                 print(
                     f'Package "{top_level_package_name}" is part of git repo at'
@@ -109,14 +116,13 @@ class Config:
                     f' ("{commit.message.strip()}", {sha})'
                 )
             else:
-                print(f"Last git commit at {commit_time} ({sha})")
+                print(f"  Last git commit at {commit_time} ({sha})")
         except Exception as err:
             if self.run_info_log_level is self.RunInfoLogLevel.FULL:
                 print(
                     f"Could not find git repo that {top_level_directory} is "
                     f"part of. Reason: {err}"
                 )
-        print(f"Current time: {datetime.now():{datetime_fmt}}")
 
     def normalize(self):
         """To be extended by subclasses."""
